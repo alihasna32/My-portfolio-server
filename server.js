@@ -4,7 +4,7 @@ const cors = require('cors');
 const { connectToDb, getDb } = require('./config/db');
 const port = process.env.PORT || 5000;
 const path = require('path');
-const serverless = require('serverless-http');
+// const serverless = require('serverless-http'); // Removed for Vercel native support
 
 const app = express();
 
@@ -29,9 +29,8 @@ app.get('/', (req, res) => {
 });
 
 // Configure Serverless Handler
-const handler = serverless(app);
+// const handler = serverless(app); // No longer needed for Vercel native
 
-// Export Handler for Vercel
 // Export Handler for Vercel
 module.exports = async (req, res) => {
     // Debug Log 1: Entry
@@ -63,8 +62,8 @@ module.exports = async (req, res) => {
         });
     }
     // Process request
-    console.log('[Vercel-Debug] Forwarding to Express handler...');
-    return handler(req, res);
+    console.log('[Vercel-Debug] Forwarding to Express app...');
+    app(req, res);
 };
 
 // Start Server for Local Development
