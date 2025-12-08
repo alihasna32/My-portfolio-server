@@ -9,12 +9,19 @@ const connectToDb = (cb) => {
         return cb(error);
     }
 
+    console.log('[Debug-DB] Starting connection attempt...');
+    // Log masked URI to verify it's loaded and looks correct (e.g. mongodb+srv://)
+    const uri = process.env.MONGO_URI;
+    console.log('[Debug-DB] URI Loaded:', uri ? (uri.substring(0, 14) + '*****' + uri.substring(uri.length - 5)) : 'undefined');
+
     // Add timeout options to fail fast if IP is blocked or DB is unreachable
     MongoClient.connect(process.env.MONGO_URI, {
         serverSelectionTimeoutMS: 5000, // Fail after 5 seconds if server not found
-        connectTimeoutMS: 10000 // TCP connection timeout
+        connectTimeoutMS: 5000,        // TCP connection timeout
+        socketTimeoutMS: 45000,        // Close sockets after 45 seconds of inactivity
     })
         .then((client) => {
+            console.log('[Debug-DB] MongoClient.connect resolved successfully.');
             dbConnection = client.db();
             return cb();
         })
