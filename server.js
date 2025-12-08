@@ -32,20 +32,30 @@ app.get('/', (req, res) => {
 const handler = serverless(app);
 
 // Export Handler for Vercel
+// Export Handler for Vercel
 module.exports = async (req, res) => {
+    // Debug Log 1: Entry
+    console.log('[Vercel-Debug] Request received:', req.method, req.url);
     try {
         // Ensure DB connection is established
         // We check getDb() to see if connection exists
         if (!getDb()) {
+            console.log('[Vercel-Debug] No active DB connection. Connecting now...');
             await new Promise((resolve, reject) => {
                 connectToDb((err) => {
-                    if (err) return reject(err);
+                    if (err) {
+                        console.error('[Vercel-Debug] Connect Callback Error:', err);
+                        return reject(err);
+                    }
+                    console.log('[Vercel-Debug] Connected to MongoDB!');
                     resolve();
                 });
             });
+        } else {
+            console.log('[Vercel-Debug] Reusing existing DB connection.');
         }
     } catch (error) {
-        console.error('Database connection error:', error);
+        console.error('[Vercel-Debug] Caught Exception:', error);
         // Return a JSON error to the client instead of crashing the function
         return res.status(500).json({
             error: 'Database connection failed',
@@ -53,6 +63,7 @@ module.exports = async (req, res) => {
         });
     }
     // Process request
+    console.log('[Vercel-Debug] Forwarding to Express handler...');
     return handler(req, res);
 };
 
