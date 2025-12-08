@@ -35,6 +35,17 @@ app.get('/', (req, res) => {
 module.exports = async (req, res) => {
     // Debug Log 1: Entry
     console.log('[Vercel-Debug] Request received:', req.method, req.url);
+    // Verify connection is alive with a ping
+    if (dbConnection) {
+        try {
+            await dbConnection.command({ ping: 1 });
+            console.log('[Vercel-Debug] Connection alive and pinged.');
+        } catch (pingErr) {
+            console.warn('[Vercel-Debug] Connection timed out or stale. Reconnecting...');
+            dbConnection = null; // Force reconnect
+        }
+    }
+
     try {
         // Ensure DB connection is established
         // We check getDb() to see if connection exists
