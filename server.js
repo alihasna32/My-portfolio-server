@@ -35,6 +35,13 @@ app.get('/', (req, res) => {
 module.exports = async (req, res) => {
     // Debug Log 1: Entry
     console.log('[Vercel-Debug] Request received:', req.method, req.url);
+
+    // Health Check: Skip DB connection for root path to verify server is running
+    if (req.url === '/' || req.url === '/favicon.ico') {
+        console.log('[Vercel-Debug] Serving Health Check (No DB).');
+        return app(req, res);
+    }
+
     // Verify connection is alive with a ping
     if (dbConnection) {
         try {
