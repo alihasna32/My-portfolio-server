@@ -33,14 +33,23 @@ const handler = serverless(app);
 
 // Export Handler for Vercel
 module.exports = async (req, res) => {
-    // Ensure DB connection is established
-    // We check getDb() to see if connection exists
-    if (!getDb()) {
-        await new Promise((resolve, reject) => {
-            connectToDb((err) => {
-                if (err) return reject(err);
-                resolve();
+    try {
+        // Ensure DB connection is established
+        // We check getDb() to see if connection exists
+        if (!getDb()) {
+            await new Promise((resolve, reject) => {
+                connectToDb((err) => {
+                    if (err) return reject(err);
+                    resolve();
+                });
             });
+        }
+    } catch (error) {
+        console.error('Database connection error:', error);
+        // Return a JSON error to the client instead of crashing the function
+        return res.status(500).json({
+            error: 'Database connection failed',
+            details: error.message
         });
     }
     // Process request
