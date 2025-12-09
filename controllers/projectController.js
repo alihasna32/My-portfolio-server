@@ -41,6 +41,7 @@ const addProject = async (req, res) => {
             link: link || '', // Live Preview Link
             codeLink: codeLink || '', // GitHub/Code Link
             description: description || '', // Short Description
+            technologies: req.body.technologies || [], // Array of technologies
             createdAt: new Date(),
         };
 
