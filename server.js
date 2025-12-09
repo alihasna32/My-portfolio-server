@@ -48,6 +48,7 @@ app.use('/api/messages', require('./routes/messageRoutes'));
 app.use('/api/gallery', require('./routes/galleryRoutes'));
 app.use('/api/resume', require('./routes/resumeRoutes'));
 app.use('/api/profile', require('./routes/profileRoutes'));
+app.use('/api/experts', require('./routes/expertRoutes'));
 
 app.get('/', (req, res) => {
     res.send('Portfolio API is running...');
