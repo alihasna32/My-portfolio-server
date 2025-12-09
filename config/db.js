@@ -22,7 +22,7 @@ const connectToDb = (cb) => {
     })
         .then((client) => {
             console.log('[Debug-DB] MongoClient.connect resolved successfully.');
-            dbConnection = client.db();
+            dbConnection = client.db('portfolio-server-db');
             return cb();
         })
         .catch((err) => {

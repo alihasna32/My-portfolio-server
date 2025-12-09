@@ -12,7 +12,7 @@ const seedUser = async () => {
         await client.connect();
         console.log('Connected to MongoDB');
 
-        const db = client.db();
+        const db = client.db('portfolio-server-db');
         const usersCollection = db.collection('users');
 
         // Check if admin exists
