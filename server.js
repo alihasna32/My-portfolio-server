@@ -1,10 +1,10 @@
 const express = require('express');
 const dotenv = require('dotenv').config();
 const cors = require('cors');
-const { connectToDb, getDb } = require('./config/db');
+const { connectToDb, getDb, resetDb } = require('./config/db');
 const port = process.env.PORT || 5000;
 const path = require('path');
-// const serverless = require('serverless-http'); // Removed for Vercel native support
+const serverless = require('serverless-http');
 
 const app = express();
 
@@ -13,8 +13,33 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Serve static files from uploads directory
-// Note: On Vercel, this file system is ephemeral. Uploads won't persist.
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Middleware to ensure DB is connected before handling requests
+app.use(async (req, res, next) => {
+    // Skip DB connection for health check and static files
+    if (req.path === '/' || req.path === '/favicon.ico' || req.path.startsWith('/uploads')) {
+        return next();
+    }
+
+    // Check if we have a valid connection
+    const currentDb = getDb();
+    if (currentDb) {
+        // Optional: Ping to verify it's still alive (can be expensive to do every request)
+        // For high traffic, you might want to throttle this check
+        next();
+    } else {
+        try {
+            console.log('[Server] Connecting to MongoDB...');
+            await connectToDb();
+            console.log('[Server] Connected.');
+            next();
+        } catch (error) {
+            console.error('[Server] Database Connection Error:', error);
+            res.status(500).json({ error: 'Database connection failed' });
+        }
+    }
+});
 
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/projects', require('./routes/projectRoutes'));
@@ -28,71 +53,19 @@ app.get('/', (req, res) => {
     res.send('Portfolio API is running...');
 });
 
-// Configure Serverless Handler
-// const handler = serverless(app); // No longer needed for Vercel native
-
-// Export Handler for Vercel
-module.exports = async (req, res) => {
-    // Debug Log 1: Entry
-    console.log('[Vercel-Debug] Request received:', req.method, req.url);
-
-    // Health Check: Skip DB connection for root path to verify server is running
-    if (req.url === '/' || req.url === '/favicon.ico') {
-        console.log('[Vercel-Debug] Serving Health Check (No DB).');
-        return app(req, res);
-    }
-
-    // Verify connection is alive with a ping
-    if (dbConnection) {
-        try {
-            await dbConnection.command({ ping: 1 });
-            console.log('[Vercel-Debug] Connection alive and pinged.');
-        } catch (pingErr) {
-            console.warn('[Vercel-Debug] Connection timed out or stale. Reconnecting...');
-            dbConnection = null; // Force reconnect
-        }
-    }
-
-    try {
-        // Ensure DB connection is established
-        // We check getDb() to see if connection exists
-        if (!getDb()) {
-            console.log('[Vercel-Debug] No active DB connection. Connecting now...');
-            await new Promise((resolve, reject) => {
-                connectToDb((err) => {
-                    if (err) {
-                        console.error('[Vercel-Debug] Connect Callback Error:', err);
-                        return reject(err);
-                    }
-                    console.log('[Vercel-Debug] Connected to MongoDB!');
-                    resolve();
-                });
-            });
-        } else {
-            console.log('[Vercel-Debug] Reusing existing DB connection.');
-        }
-    } catch (error) {
-        console.error('[Vercel-Debug] Caught Exception:', error);
-        // Return a JSON error to the client instead of crashing the function
-        return res.status(500).json({
-            error: 'Database connection failed',
-            details: error.message
-        });
-    }
-    // Process request
-    console.log('[Vercel-Debug] Forwarding to Express app...');
-    app(req, res);
-};
-
 // Start Server for Local Development
 if (require.main === module) {
-    connectToDb((err) => {
-        if (!err) {
+    // For local dev, connect once and then start listening
+    connectToDb()
+        .then(() => {
             app.listen(port, () => {
                 console.log(`Server started on port ${port}`);
             });
-        } else {
+        })
+        .catch(err => {
             console.error('Failed to connect to MongoDb', err);
-        }
-    });
+        });
+} else {
+    // Export for Vercel
+    module.exports = serverless(app);
 }
