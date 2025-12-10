@@ -20,24 +20,8 @@ const getExperts = async (req, res) => {
 // @access  Private/Admin
 const addExpert = async (req, res) => {
     try {
-        const { name } = req.body;
-        // Check if an image file was uploaded
-        let imageUrl = '';
-        if (req.file) {
-            // Construct URL based on where we are hosting. 
-            // Assuming uploads folder is served at /uploads
-            // In server.js: app.use('/uploads', express.static(...))
-
-            // We need the full URL or relative path.
-            // Using ENV var for base URL is best, but relative path '/uploads/...' works if client handles base.
-            // Based on previous Plan, client uses full URL.
-            // Let's assume we store the relative path and client prepends, or we store full path if we can.
-            // Better: Store relative path `/uploads/filename` and let client/API prepend base URL.
-            // However, existing Resume upload seems to return full URL or client constructs it. 
-            // Let's store `/uploads/${req.file.filename}`.
-
-            imageUrl = `/uploads/${req.file.filename}`;
-        }
+        console.log('Received addExpert body:', req.body); // Debug log
+        const { name, image } = req.body;
 
         if (!name) {
             return res.status(400).json({ message: 'Name is required' });
@@ -45,7 +29,7 @@ const addExpert = async (req, res) => {
 
         const newExpert = {
             name,
-            image: imageUrl,
+            image: image || '',
             createdAt: new Date()
         };
 
