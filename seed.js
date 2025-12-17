@@ -44,7 +44,7 @@ const seedUser = async () => {
         console.error('Error seeding data:', error);
         process.exit(1);
     } finally {
-        await client.close();
+        // await client.close();
     }
 };
 
